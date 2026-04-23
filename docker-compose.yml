@@ -1,0 +1,183 @@
+version: "3.9"
+
+# =============================================================================
+# SovereignNode AI — Master Edge Deployment Compose
+# =============================================================================
+# Orchestrates:
+#   mongodb           — Persistent document store (sensor readings)
+#   rabbitmq          — AMQP message broker (telemetry fan-out)
+#   telemetry-service — Java Spring Boot ingestion API  (:8080)
+#   inference-engine  — Python FastAPI + local LLM       (:8000)
+#
+# GPU ACCESS:
+#   The inference-engine service uses the NVIDIA Container Toolkit.
+#   Install it first: https://docs.nvidia.com/datacenter/cloud-native/
+#   Verify with: docker run --rm --gpus all nvidia/cuda:12.1.0-base-ubuntu22.04 nvidia-smi
+#
+# Usage:
+#   docker compose up -d --build
+#   docker compose logs -f inference-engine   # watch model loading
+#   docker compose down -v                    # teardown + remove volumes
+# =============================================================================
+
+networks:
+  sovnode-net:
+    driver: bridge
+    name: sovnode-network
+
+volumes:
+  mongo_data:
+    name: sovnode_mongo_data
+  rabbitmq_data:
+    name: sovnode_rabbitmq_data
+  chroma_store:
+    name: sovnode_chroma_store
+    driver: local
+  model_cache:
+    name: sovnode_model_cache
+    driver: local
+  manuals:
+    name: sovnode_manuals
+    driver: local
+
+services:
+
+  # ── MongoDB 7.0 ─────────────────────────────────────────────────────────────
+  mongodb:
+    image: mongo:7.0
+    container_name: sovnode-mongodb
+    restart: unless-stopped
+    networks: [sovnode-net]
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_DATABASE: telemetry_db
+    volumes:
+      - mongo_data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping').ok"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  # ── RabbitMQ 3.13 ───────────────────────────────────────────────────────────
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: sovnode-rabbitmq
+    restart: unless-stopped
+    networks: [sovnode-net]
+    ports:
+      - "5672:5672"    # AMQP
+      - "15672:15672"  # Management UI  → http://localhost:15672 (guest/guest)
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+      RABBITMQ_DEFAULT_VHOST: /
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  # ── Java Spring Boot Ingestion Service ──────────────────────────────────────
+  telemetry-service:
+    build:
+      context: ./iot-telemetry-service
+      dockerfile: Dockerfile
+    image: sovnode/telemetry-service:latest
+    container_name: sovnode-telemetry
+    restart: unless-stopped
+    networks: [sovnode-net]
+    ports:
+      - "8080:8080"
+    environment:
+      # Infrastructure endpoints
+      MONGODB_URI:   mongodb://mongodb:27017/telemetry_db
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: "5672"
+      RABBITMQ_USER: guest
+      RABBITMQ_PASS: guest
+      # AI inference bridge
+      AI_INFERENCE_BASE_URL:   http://inference-engine:8000
+      AI_INFERENCE_READ_TIMEOUT: "90"
+      AI_VIBRATION_THRESHOLD:  "7.1"
+      # JVM tuning
+      JAVA_OPTS: >-
+        -XX:+UseContainerSupport
+        -XX:MaxRAMPercentage=75.0
+        -Djava.security.egd=file:/dev/./urandom
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      inference-engine:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8080/actuator/health | grep -q UP || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 60s
+
+  # ── Python FastAPI AI Inference Engine ──────────────────────────────────────
+  inference-engine:
+    build:
+      context: ./ai-inference-engine
+      dockerfile: Dockerfile
+    image: sovnode/inference-engine:latest
+    container_name: sovnode-inference
+    restart: unless-stopped
+    networks: [sovnode-net]
+    ports:
+      - "8000:8000"    # FastAPI  → http://localhost:8000/docs
+    environment:
+      # ChromaDB and model storage (mapped to named volumes below)
+      CHROMA_PERSIST_DIR:    /app/chroma_store
+      LLM_CACHE_DIR:         /app/model_cache
+      MANUALS_DIR:           /app/manuals
+      # Model selection (override to switch SLMs without rebuilding)
+      LLM_MODEL_ID:          microsoft/Phi-3-mini-4k-instruct
+      EMBEDDING_MODEL_NAME:  sentence-transformers/all-MiniLM-L6-v2
+      EMBEDDING_DEVICE:      cuda
+      LLM_LOAD_IN_4BIT:      "true"
+      LLM_BNB_COMPUTE_DTYPE: bfloat16
+      LLM_USE_FLASH_ATTENTION: "true"
+      # Generation
+      TEMPERATURE:           "0.1"
+      MAX_NEW_TOKENS:        "512"
+      TOP_K_RESULTS:         "3"
+      LOG_LEVEL:             INFO
+      # HuggingFace
+      HF_HOME:               /app/model_cache
+      TRANSFORMERS_CACHE:    /app/model_cache
+      TOKENIZERS_PARALLELISM: "false"
+    volumes:
+      # Persistent ChromaDB vector index (survives container restarts)
+      - chroma_store:/app/chroma_store
+      # Persistent HuggingFace / bitsandbytes model cache
+      # IMPORTANT: First run downloads the LLM weights (~2-4 GB); volume prevents re-download.
+      - model_cache:/app/model_cache
+      # Mount your enterprise manuals directory here
+      # Replace ./manuals with the absolute path to your .txt/.pdf folder
+      - manuals:/app/manuals
+    # ── NVIDIA GPU Access ────────────────────────────────────────────────────
+    # Requires: NVIDIA Container Toolkit installed on the host.
+    # This block grants the container access to ALL available GPUs.
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:8000/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 120s    # LLM model loading can take 60-90 s on first boot

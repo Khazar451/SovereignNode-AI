@@ -1,0 +1,95 @@
+# ─── Server ───────────────────────────────────────────────────────────────────
+server:
+  port: 8080
+  tomcat:
+    threads:
+      max: 200          # Tomcat thread ceiling; tune per sizing target
+      min-spare: 20
+  shutdown: graceful    # Drain in-flight requests on SIGTERM
+
+spring:
+  threads:
+    virtual:
+      enabled: true     # Java 21 Virtual Threads for non-blocking IO at OS level
+
+  # ─── MongoDB ──────────────────────────────────────────────────────────────
+  data:
+    mongodb:
+      uri: ${MONGODB_URI:mongodb://localhost:27017/telemetry_db}
+      auto-index-creation: true   # Create @Indexed annotations on startup
+
+  # ─── RabbitMQ ─────────────────────────────────────────────────────────────
+  rabbitmq:
+    host: ${RABBITMQ_HOST:localhost}
+    port: ${RABBITMQ_PORT:5672}
+    username: ${RABBITMQ_USER:guest}
+    password: ${RABBITMQ_PASS:guest}
+    virtual-host: /
+    # Publisher confirms: ensure message durability before ACK returns to caller
+    publisher-confirm-type: correlated
+    publisher-returns: true
+    listener:
+      simple:
+        acknowledge-mode: manual       # Manual ACK – no message loss on crash
+        prefetch: 10                   # Back-pressure: consume 10 msgs at a time
+        retry:
+          enabled: true
+          max-attempts: 3
+          initial-interval: 1000ms
+          multiplier: 2.0
+          max-interval: 10000ms
+
+  # ─── Jackson ──────────────────────────────────────────────────────────────
+  jackson:
+    serialization:
+      write-dates-as-timestamps: false
+    default-property-inclusion: non_null
+
+# ─── Telemetry Broker Config ──────────────────────────────────────────────────
+telemetry:
+  broker:
+    exchange: telemetry.exchange          # Topic exchange name
+    queue: telemetry.ingest.queue         # Durable ingestion queue
+    routing-key: sensor.#                 # Topic pattern; catches sensor.* subtopics
+    dead-letter-exchange: telemetry.dlx   # DLX for poison messages
+    dead-letter-queue: telemetry.dl.queue # Dead-letter queue for inspection
+
+# ─── Actuator / Observability ─────────────────────────────────────────────────
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health, info, metrics, prometheus
+      base-path: /actuator
+  endpoint:
+    health:
+      show-details: always
+  metrics:
+    tags:
+      application: iot-telemetry-service
+
+# ─── Logging ──────────────────────────────────────────────────────────────────
+logging:
+  level:
+    root: INFO
+    ai.sovereignnode: DEBUG
+    org.springframework.amqp: WARN
+  pattern:
+    console: "%d{ISO8601} [%X{traceId}] %-5level %logger{36} - %msg%n"
+
+# ─── AI Inference Engine (Python FastAPI) ────────────────────────────────────
+ai:
+  inference:
+    base-url: ${AI_INFERENCE_BASE_URL:http://localhost:8000}
+    connect-timeout-seconds: ${AI_INFERENCE_CONNECT_TIMEOUT:2}
+    read-timeout-seconds: ${AI_INFERENCE_READ_TIMEOUT:60}
+  anomaly:
+    vibration-threshold-mms: ${AI_VIBRATION_THRESHOLD:7.1}  # ISO 10816-3 Class III alarm limit
+
+# ─── SpringDoc / OpenAPI ──────────────────────────────────────────────────────
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    operations-sorter: method

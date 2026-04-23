@@ -1,0 +1,114 @@
+ENTERPRISE MAINTENANCE MANUAL — INDUSTRIAL CENTRIFUGAL PUMP SYSTEM
+Model: AquaDrive XP-7000
+Revision: 4.2 | Issued: 2026-01-15
+Classified: INTERNAL USE ONLY
+
+=============================================================================
+SECTION 1 — OVERVIEW
+=============================================================================
+
+The AquaDrive XP-7000 is a heavy-duty centrifugal pump designed for continuous
+industrial fluid transfer applications. Operating range: 5 to 450 m3/h, head
+up to 120 m, maximum fluid temperature 150 degrees Celsius.
+
+Drive configuration: Direct-drive, coupled to a 75 kW three-phase induction
+motor rated 415V / 50 Hz. Shaft seal: Double mechanical seal, pressurized
+barrier fluid system (API Plan 53B).
+
+=============================================================================
+SECTION 2 — ROUTINE MAINTENANCE SCHEDULE
+=============================================================================
+
+2.1 Daily Checks (Operator)
+---------------------------
+- Verify bearing temperature does not exceed 80 degrees Celsius (threshold alert at 75 C).
+- Check mechanical seal barrier fluid pressure: nominal 2.5 bar, alarm at 2.0 bar.
+- Inspect for abnormal noise or vibration. Baseline vibration: < 2.8 mm/s RMS.
+- Confirm lubricant level in bearing housing (sight glass: between MIN and MAX marks).
+- Log pump flow rate and differential pressure against design curve.
+
+2.2 Weekly Checks (Maintenance Technician)
+------------------------------------------
+- Grease both bearing housings: SKF LGMT 3 grease, 5 ml per housing via grease nipple.
+- Inspect flexible coupling for wear, misalignment, or elastomer degradation.
+- Verify motor current draw against nameplate FLA (Full Load Amps = 128 A at 415V).
+- Test emergency stop circuit and interlock function.
+
+2.3 Monthly Checks
+-------------------
+- Replace mechanical seal barrier fluid: use Shell Tellus S2 VX 32 hydraulic oil.
+- Full vibration analysis (ISO 10816-3 Class III): replace bearings if vibration exceeds 7.1 mm/s RMS.
+- Inspect impeller for cavitation erosion; replace if blade thickness < 3 mm.
+- Retorque pump casing bolts to 180 Nm (M20 grade 8.8 bolts).
+
+2.4 Annual Overhaul
+--------------------
+- Complete disassembly, inspection, and reassembly by certified pump technician.
+- Replace mechanical seal cartridge (Part No: XP7-SEAL-053B).
+- Replace all O-rings and gaskets (Kit Part No: XP7-GASK-KIT).
+- Rebalance impeller to ISO 1940 Grade G2.5.
+- Perform hydraulic performance test against original factory curve.
+
+=============================================================================
+SECTION 3 — TROUBLESHOOTING
+=============================================================================
+
+3.1 Excessive Vibration (> 4.5 mm/s RMS)
+-----------------------------------------
+Possible causes:
+  a) Cavitation — check NPSHa vs NPSHr; verify suction pressure.
+  b) Impeller imbalance — inspect and rebalance.
+  c) Bearing wear — check radial play; replace if clearance > 0.05 mm.
+  d) Shaft misalignment — realign using laser alignment tool (tolerance: 0.05 mm/m).
+  e) Foundation looseness — re-grout baseplate.
+
+3.2 Mechanical Seal Leakage
+----------------------------
+Acceptable leakage: < 3 drops/minute for single mechanical seals.
+If leakage exceeds 3 drops/minute:
+  a) Check barrier fluid pressure (Plan 53B): restore to 2.5 bar.
+  b) Inspect seal faces for scoring or thermal cracking.
+  c) Replace seal cartridge (Part No: XP7-SEAL-053B). Torque gland bolts to 45 Nm.
+
+3.3 High Bearing Temperature (> 80 C)
+---------------------------------------
+  a) Check lubricant level and quality — discolouration indicates contamination.
+  b) Verify grease type: only SKF LGMT 3 approved.
+  c) Check for overloading: measure shaft power vs nameplate rating.
+  d) Replace bearing if temperature persists after re-lubrication (FAG 6316-2RSR-C3).
+
+3.4 Low Flow / Low Pressure
+-----------------------------
+  a) Check for partially closed suction or discharge valve.
+  b) Inspect impeller — worn or blocked passages reduce hydraulic performance.
+  c) Check for air entrainment in suction line.
+  d) Verify speed (VFD output frequency): rated 50 Hz. Adjust if below setpoint.
+
+=============================================================================
+SECTION 4 — SPARE PARTS LIST
+=============================================================================
+
+Part No.        Description                         Qty Recommended
+----------------------------------------------------------------------
+XP7-SEAL-053B   Mechanical seal cartridge (API 53B)     2
+XP7-GASK-KIT    Full gasket and O-ring kit               2
+FAG-6316-2RSR   Deep groove ball bearing (NDE side)      1
+FAG-6220-2RSR   Deep groove ball bearing (DE side)       1
+XP7-IMP-316     Impeller 316SS, 350mm dia               1
+XP7-SHAFT-17    Pump shaft, 17-4PH stainless steel      1
+XP7-CPL-FLEX    Flexible coupling elastomer insert       2
+
+=============================================================================
+SECTION 5 — SAFETY REQUIREMENTS
+=============================================================================
+
+- De-energize and LOTO (Lock-Out Tag-Out) before any maintenance.
+- Drain and flush the pump casing before opening — hazardous fluid risk.
+- Use PPE: chemical-resistant gloves, face shield, steel-capped boots.
+- Hot surfaces: pump casing may reach 150 C under normal operation.
+- Minimum two-person team required for impeller removal (weight: 48 kg).
+- Emergency shutdown: press red E-STOP button on MCC panel or use DCS tag PMP-7000-ESD.
+
+=============================================================================
+END OF DOCUMENT
+=============================================================================
