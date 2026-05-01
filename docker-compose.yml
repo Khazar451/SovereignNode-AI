@@ -1,4 +1,4 @@
-version: "3.9"
+# docker-compose.yml — version field removed (obsolete in Compose v2+)
 
 # =============================================================================
 # SovereignNode AI — Master Edge Deployment Compose
@@ -93,7 +93,7 @@ services:
     restart: unless-stopped
     networks: [sovnode-net]
     ports:
-      - "8080:8080"
+      - "18080:8080"  # Host 18080 → container 8080 (8080 in use by ems-caddy)
     environment:
       # Infrastructure endpoints
       MONGODB_URI:   mongodb://mongodb:27017/telemetry_db
@@ -141,20 +141,20 @@ services:
       LLM_CACHE_DIR:         /app/model_cache
       MANUALS_DIR:           /app/manuals
       # Model selection (override to switch SLMs without rebuilding)
-      LLM_MODEL_ID:          microsoft/Phi-3-mini-4k-instruct
+      LLM_MODEL_ID:          Qwen/Qwen1.5-0.5B-Chat
       EMBEDDING_MODEL_NAME:  sentence-transformers/all-MiniLM-L6-v2
-      EMBEDDING_DEVICE:      cuda
-      LLM_LOAD_IN_4BIT:      "true"
+      EMBEDDING_DEVICE:      cpu
+      LLM_DEVICE_MAP:        cpu
+      LLM_LOAD_IN_4BIT:      "false"
       LLM_BNB_COMPUTE_DTYPE: bfloat16
-      LLM_USE_FLASH_ATTENTION: "true"
+      LLM_USE_FLASH_ATTENTION: "false"
       # Generation
       TEMPERATURE:           "0.1"
-      MAX_NEW_TOKENS:        "512"
-      TOP_K_RESULTS:         "3"
+      MAX_NEW_TOKENS:        "300"
+      TOP_K_RESULTS:         "1"
       LOG_LEVEL:             INFO
       # HuggingFace
       HF_HOME:               /app/model_cache
-      TRANSFORMERS_CACHE:    /app/model_cache
       TOKENIZERS_PARALLELISM: "false"
     volumes:
       # Persistent ChromaDB vector index (survives container restarts)

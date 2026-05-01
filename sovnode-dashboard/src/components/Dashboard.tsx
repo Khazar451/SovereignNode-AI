@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useTelemetry } from '../hooks/useTelemetry'
 import { SensorCard } from './SensorCard'
 import { AiDiagnosticsPanel } from './AiDiagnosticsPanel'
@@ -177,15 +177,15 @@ export function Dashboard() {
 
   // Track which readings are "new" to trigger the highlight animation
   const [newIds, setNewIds] = useState<Set<string>>(new Set())
-  const prevIdsRef = useState<Set<string>>(new Set())[0]
+  const prevIdsRef = useRef<Set<string>>(new Set())
 
   useEffect(() => {
     if (readings.length === 0) return
     const incoming = new Set(readings.map((r) => r.id))
-    const fresh = [...incoming].filter((id) => !prevIdsRef.has(id))
+    const fresh = [...incoming].filter((id) => !prevIdsRef.current.has(id))
     if (fresh.length > 0) {
       setNewIds(new Set(fresh))
-      fresh.forEach((id) => prevIdsRef.add(id))
+      fresh.forEach((id) => prevIdsRef.current.add(id))
       // Remove highlight after 2 s
       const t = setTimeout(() => setNewIds(new Set()), 2000)
       return () => clearTimeout(t)
@@ -246,7 +246,7 @@ export function Dashboard() {
                   <span className="text-3xl opacity-30">📡</span>
                   <p className="text-sm text-slate-500">
                     Waiting for telemetry from{' '}
-                    <span className="mono text-cyan-600">localhost:8080</span> …
+                    <span className="mono text-cyan-600">localhost:18080</span> …
                   </p>
                   <p className="text-xs text-slate-600">
                     Send a POST to /api/v1/telemetry to see data here
@@ -283,7 +283,7 @@ export function Dashboard() {
           SovereignNode AI v1.0.0 · Air-gapped · Zero data egress
         </span>
         <span className="mono text-[10px] text-slate-700">
-          Java :8080 · Python :8000 · MongoDB :27017 · RabbitMQ :5672
+          Java :18080 · Python :8000 · MongoDB :27017 · RabbitMQ :5672
         </span>
       </footer>
     </div>

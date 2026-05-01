@@ -1,14 +1,18 @@
 // ─── SovereignNode AI — Shared TypeScript types ───────────────────────────
 
-/** Spring Data Page wrapper returned by all paginated Java endpoints */
+/**
+ * Spring Data Page wrapper returned by all paginated Java endpoints.
+ * Shape matches @EnableSpringDataWebSupport(pageSerializationMode = VIA_DTO)
+ * where pagination metadata is nested under a 'page' sub-object.
+ */
 export interface SpringPage<T> {
   content: T[]
-  totalElements: number
-  totalPages: number
-  number: number        // current page (0-based)
-  size: number
-  first: boolean
-  last: boolean
+  page: {
+    size: number
+    number: number        // current page (0-based)
+    totalElements: number
+    totalPages: number
+  }
 }
 
 /** MongoDB SensorReading document returned by the Java API */

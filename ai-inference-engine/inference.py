@@ -130,7 +130,7 @@ class LanguageModel:
         )
         self.model.eval()
 
-        if cuda_available and not load_in_4bit:
+        if cuda_available and not load_in_4bit and device_map not in ("auto", "cpu"):
             # Full-precision: move to GPU explicitly when not using device_map=auto
             self.model = self.model.to("cuda")
 

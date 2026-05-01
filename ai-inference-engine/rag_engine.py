@@ -71,11 +71,11 @@ _SYSTEM_LINES = [
 ]
 SYSTEM_PROMPT = "\n".join(_SYSTEM_LINES)
 
-# Chat tokens (filled in by the module that imports this at runtime)
-_SYS_TOK  = '<|system|>'
-_END_TOK  = '<|end|>'
-_USER_TOK = '<|user|>'
-_ASST_TOK = '<|assistant|>'
+# Chat tokens (ChatML format for Qwen)
+_SYS_TOK  = '<|im_start|>system'
+_END_TOK  = '<|im_end|>'
+_USER_TOK = '<|im_start|>user'
+_ASST_TOK = '<|im_start|>assistant'
 
 
 def build_prompt(query: str, chunks: List[RetrievedChunk]) -> str:

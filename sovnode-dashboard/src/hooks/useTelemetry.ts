@@ -172,11 +172,11 @@ export function useTelemetry(): TelemetryState {
       if ((err as Error).name === 'AbortError') return
       const msg = err instanceof Error ? err.message : 'Unknown error'
       console.error('Poll error:', msg)
-      setStatus(isLoading ? 'error' : 'degraded')
+      setStatus((prev) => prev === 'connecting' ? 'error' : 'degraded')
       setErrorMessage(msg)
       setIsLoading(false)
     }
-  }, [fetchByStatus, requestAiDiagnostic, isLoading])
+  }, [fetchByStatus, requestAiDiagnostic])
 
   // ── Effect: Start polling ─────────────────────────────────────────────────
   useEffect(() => {

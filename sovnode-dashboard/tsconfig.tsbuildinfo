@@ -1,0 +1,1 @@
+{"root":["./src/App.tsx","./src/main.tsx","./src/components/AiDiagnosticsPanel.tsx","./src/components/Dashboard.tsx","./src/components/SensorCard.tsx","./src/hooks/useTelemetry.ts","./src/types/index.ts"],"version":"5.9.3"}

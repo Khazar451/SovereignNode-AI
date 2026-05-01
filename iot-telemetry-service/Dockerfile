@@ -6,19 +6,20 @@
 # Stage 1: Build the Spring Boot fat JAR
 FROM eclipse-temurin:21-jdk-alpine AS builder
 
+# Install Maven directly — avoids needing mvnw / .mvn in the repo
+RUN apk add --no-cache maven
+
 WORKDIR /build
 
-# Copy Maven wrapper and POM first to cache dependency resolution layer
-COPY .mvn/ .mvn/
-COPY mvnw pom.xml ./
-RUN chmod +x mvnw
+# Copy POM first so dependency layer is cached independently of source changes
+COPY pom.xml ./
 
-# Download dependencies (cached unless pom.xml changes)
-RUN ./mvnw dependency:go-offline -B --no-transfer-progress
+# Download all dependencies (cached unless pom.xml changes)
+RUN mvn dependency:go-offline -B --no-transfer-progress
 
-# Copy source and build
+# Copy source and build the fat JAR
 COPY src ./src
-RUN ./mvnw package -DskipTests -B --no-transfer-progress
+RUN mvn package -DskipTests -B --no-transfer-progress
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Stage 2: Minimal runtime image

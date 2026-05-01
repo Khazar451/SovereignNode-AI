@@ -18,7 +18,10 @@ from __future__ import annotations
 
 import logging
 import time
+import threading
 from typing import List, Optional
+
+_inference_lock = threading.Lock()
 
 import torch
 from fastapi import FastAPI, HTTPException, Request
@@ -152,7 +155,7 @@ async def health_check() -> dict:
         "diagnostic insight. All inference is performed entirely offline."
     ),
 )
-async def generate_insight(request: InsightRequest) -> InsightResponse:
+def generate_insight(request: InsightRequest) -> InsightResponse:
     """
     Full RAG pipeline endpoint.
 
@@ -180,7 +183,8 @@ async def generate_insight(request: InsightRequest) -> InsightResponse:
 
     t0 = time.perf_counter()
     try:
-        result: RAGResult = query_rag(enriched_query, top_k=cfg.TOP_K_RESULTS)
+        with _inference_lock:
+            result: RAGResult = query_rag(enriched_query, top_k=cfg.TOP_K_RESULTS)
     except Exception as exc:
         logger.exception("RAG pipeline failed for sensor_id=%s", request.sensor_id)
         raise HTTPException(

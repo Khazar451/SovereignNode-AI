@@ -9,7 +9,7 @@ export default defineConfig({
     proxy: {
       // Proxy Java backend — avoids CORS issues in dev
       '/api': {
-        target: 'http://localhost:8080',
+        target: 'http://localhost:18080',
         changeOrigin: true,
       },
       // Proxy Python inference engine
