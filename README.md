@@ -12,7 +12,7 @@
 
 ---
 
-## 📖 The "Why": Architecture & Tech Stack
+## The "Why": Architecture & Tech Stack
 
 Industrial environments require absolute data sovereignty, high reliability, and rapid insight generation on highly constrained edge servers. 
 
@@ -23,7 +23,7 @@ Industrial environments require absolute data sovereignty, high reliability, and
 
 ---
 
-## 📂 Repository Structure
+## Repository Structure
 
 The platform is divided into domain-specific microservices:
 
@@ -34,7 +34,7 @@ The platform is divided into domain-specific microservices:
 
 ---
 
-## 🚀 Quickstart Guide
+## Quickstart Guide
 
 The entire backend runs in a cross-platform Docker Compose stack. It relies on the NVIDIA Container Toolkit for GPU passthrough but is heavily optimized to run safely on standard CPUs (`~1.1 GB` RAM total footprint) if hardware resources are constrained.
 
@@ -65,7 +65,7 @@ sudo bash ./setup_edge.sh
 
 ---
 
-## 📡 Verifying the Deployment
+## Verifying the Deployment
 
 Once the Docker Compose stack is running, you can interact with the platform:
 
@@ -88,5 +88,5 @@ Once the Docker Compose stack is running, you can interact with the platform:
 
 ---
 
-### 🔬 Engineering Deep Dive
+### Engineering Deep Dive
 Curious about how we optimized this stack to run on a 2GB VRAM edge server without crashing? Read the [Architecture & Engineering Report](./ENGINEERING_REPORT.md).
