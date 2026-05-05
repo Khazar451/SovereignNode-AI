@@ -47,21 +47,8 @@ sudo bash ./setup_edge.sh
 ```
 *(If the server dependencies are already installed, you can simply run `docker compose up -d`)*
 
-### Windows (WSL 2)
-
-> [!WARNING]  
-> **Windows Prerequisites**  
-> For this stack to run correctly on Windows, you **MUST** ensure:
-> 1. Docker Desktop is installed and the **"WSL 2 based engine"** is enabled in Settings -> General.
-> 2. You have the latest NVIDIA Windows drivers installed. WSL 2 natively supports GPU passthrough automatically if the host Windows drivers are up-to-date.
-
-1. Open PowerShell as Administrator.
-2. Run the deployment script:
-
-```powershell
-.\setup_edge.ps1
-```
-
+### Windows 
+Under Development
 ---
 
 ## Verifying the Deployment
