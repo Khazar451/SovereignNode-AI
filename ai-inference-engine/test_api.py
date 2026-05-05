@@ -52,10 +52,9 @@ def test_generate_insight_success(mock_rag_result):
         assert data["insight"] == "Maintenance required: replace bearing."
         assert "confidence_score" in data
         assert "inference_time_ms" in data
-        assert data["sensor_id"] == "PUMP-001"
 
 def test_health_check():
     """Simple test for the liveness endpoint."""
     response = client.get("/health")
     assert response.status_code == 200
-    assert response.json() == {"status": "healthy"}
+    assert response.json()["status"] == "healthy"

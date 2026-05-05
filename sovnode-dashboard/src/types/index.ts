@@ -77,4 +77,43 @@ export interface TelemetryState {
     warningCount: number
     nominalCount: number
   }
+  /** Number of AI diagnostic requests currently in-flight */
+  pendingDiagnostics: number
+}
+
+// ─── AI Chat ──────────────────────────────────────────────────────────────
+
+export interface ChatMessage {
+  role: 'user' | 'assistant' | 'system'
+  content: string
+}
+
+export interface ChatRequest {
+  messages:    ChatMessage[]
+  use_rag:     boolean
+  stream:      boolean
+  top_k:       number
+  temperature: number
+}
+
+export interface ChatResponse {
+  answer:            string
+  confidence_score:  number
+  sources:           string[]
+  inference_time_ms: number
+  rag_chunks_used:   number
+}
+
+/** A single message in the local chat history (includes UI-state metadata) */
+export interface AiChatMessage {
+  id:               string
+  role:             'user' | 'assistant'
+  content:          string
+  timestamp:        string
+  confidence_score?: number
+  sources?:          string[]
+  inference_time_ms?: number
+  rag_chunks_used?:   number
+  isLoading?:         boolean
+  error?:             string
 }

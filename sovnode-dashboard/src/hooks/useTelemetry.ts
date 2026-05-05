@@ -30,13 +30,17 @@ function mergeReadings(prev: SensorReading[], next: SensorReading[]): SensorRead
 }
 
 function buildDiagnosticQuery(reading: SensorReading): string {
+  const status = reading.status.toLowerCase()
+  const anomaly = reading.vibration > VIBRATION_ALERT_THRESHOLD ? 'high vibration' : 'high temperature'
+
   return (
-    `Sensor '${reading.sensorId}' reported vibration of ${reading.vibration.toFixed(2)} mm/s RMS, ` +
-    `significantly above the alarm threshold of ${VIBRATION_ALERT_THRESHOLD} mm/s. ` +
-    `Temperature at the time was ${reading.temperature.toFixed(1)} degrees Celsius and ` +
-    `operational status was '${reading.status}'. ` +
+    `${anomaly} alarm detected: vibration ${reading.vibration.toFixed(2)} mm/s RMS ` +
+    `exceeds the ${VIBRATION_ALERT_THRESHOLD} mm/s alarm threshold. ` +
+    `Temperature is ${reading.temperature.toFixed(1)} degrees Celsius. ` +
+    `Equipment status is ${status}. ` +
     `Based on the maintenance manual, what are the most likely root causes ` +
-    `and what immediate corrective actions should be taken?`
+    `and what immediate corrective actions should be taken for bearing inspection ` +
+    `and vibration reduction?`
   )
 }
 
@@ -51,12 +55,17 @@ function buildDiagnosticQuery(reading: SensorReading): string {
  *     2. Fetch WARNING readings
  *     3. Fetch NOMINAL readings
  *     4. For each NEW anomalous reading, call Python FastAPI for an AI insight
- *        (non-blocking: the diagnostic arrives on the next tick)
+ *        (non-blocking: the diagnostic arrives asynchronously)
+ *
+ * IMPORTANT: AI diagnostic requests use a SEPARATE AbortController from the
+ * polling cycle. The LLM inference takes 40-80+ seconds on CPU, while the poll
+ * cycle runs every 2 seconds. If they shared the same AbortController, every
+ * poll would abort in-flight AI requests before they could complete.
  *
  * The hook is designed for resilience:
  *   - Network errors degrade gracefully (status → 'degraded', data retained)
- *   - Cleanup: interval is cleared on unmount; in-flight AI calls are ignored
- *     after the component unmounts (via abortController)
+ *   - Cleanup: interval is cleared on unmount; in-flight AI calls are cancelled
+ *     via a dedicated unmount-only AbortController
  */
 export function useTelemetry(): TelemetryState {
   const [readings, setReadings]             = useState<SensorReading[]>([])
@@ -65,11 +74,21 @@ export function useTelemetry(): TelemetryState {
   const [lastUpdated, setLastUpdated]       = useState<Date | null>(null)
   const [isLoading, setIsLoading]           = useState(true)
   const [errorMessage, setErrorMessage]     = useState<string | null>(null)
+  const [pendingDiagnostics, setPending]    = useState(0)
 
   // Track which sensor IDs we've already sent for AI analysis (session-scoped)
   const analysedSensorIds = useRef<Set<string>>(new Set())
-  // AbortController for in-flight requests
-  const abortRef = useRef<AbortController | null>(null)
+
+  // AbortController for POLLING requests only (recycled each poll cycle)
+  const pollAbortRef = useRef<AbortController | null>(null)
+
+  // AbortController for AI DIAGNOSTIC requests (only aborted on unmount)
+  // This is critical: LLM inference takes 40-80s on CPU, so AI requests must
+  // NOT be cancelled by the 2-second poll cycle.
+  const aiAbortRef = useRef<AbortController>(new AbortController())
+
+  // Track whether the component is still mounted
+  const mountedRef = useRef(true)
 
   // ── fetchStatus ─────────────────────────────────────────────────────────────
   const fetchByStatus = useCallback(
@@ -86,12 +105,20 @@ export function useTelemetry(): TelemetryState {
   )
 
   // ── requestAiDiagnostic ─────────────────────────────────────────────────────
+  // Uses the AI-specific AbortController (aiAbortRef), NOT the poll controller.
   const requestAiDiagnostic = useCallback(
-    async (reading: SensorReading, signal: AbortSignal): Promise<void> => {
-      // Deduplicate: only call once per sensor ID per session
+    async (reading: SensorReading): Promise<void> => {
+      // Deduplicate: only call once per sensor reading per session
       const key = `${reading.sensorId}::${reading.id}`
-      if (analysedSensorIds.current.has(key)) return
+      if (analysedSensorIds.current.has(key)) {
+        return
+      }
       analysedSensorIds.current.add(key)
+
+      console.log(
+        `[AI Diagnostic] Requesting insight for ${reading.sensorId} ` +
+        `(vibration=${reading.vibration.toFixed(2)} mm/s, threshold=${VIBRATION_ALERT_THRESHOLD})`
+      )
 
       const body: AiInsightRequest = {
         sensor_id:    reading.sensorId,
@@ -104,12 +131,15 @@ export function useTelemetry(): TelemetryState {
         query: buildDiagnosticQuery(reading),
       }
 
+      // Track pending count for UI feedback
+      setPending((n) => n + 1)
+
       try {
         const res = await fetch(`${PYTHON_BASE}/generate-insight`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(body),
-          signal,
+          signal: aiAbortRef.current.signal,   // ← AI-specific controller
         })
 
         if (!res.ok) {
@@ -118,6 +148,12 @@ export function useTelemetry(): TelemetryState {
         }
 
         const insight = await res.json()
+
+        console.log(`[AI Diagnostic] ✅ Insight received for ${reading.sensorId}`, insight)
+
+        // Only update state if still mounted
+        if (!mountedRef.current) return
+
         const diagnostic: AiDiagnostic = {
           ...insight,
           id:               `${reading.id}-${Date.now()}`,
@@ -132,6 +168,10 @@ export function useTelemetry(): TelemetryState {
         if ((err as Error).name !== 'AbortError') {
           console.warn(`AI insight failed for ${reading.sensorId}:`, err)
         }
+      } finally {
+        if (mountedRef.current) {
+          setPending((n) => Math.max(0, n - 1))
+        }
       }
     },
     []
@@ -139,9 +179,10 @@ export function useTelemetry(): TelemetryState {
 
   // ── poll ─────────────────────────────────────────────────────────────────────
   const poll = useCallback(async () => {
-    abortRef.current?.abort()
+    // Abort ONLY the previous poll fetch, NOT any AI requests
+    pollAbortRef.current?.abort()
     const controller = new AbortController()
-    abortRef.current = controller
+    pollAbortRef.current = controller
     const { signal } = controller
 
     try {
@@ -161,12 +202,13 @@ export function useTelemetry(): TelemetryState {
       setIsLoading(false)
 
       // Trigger async AI diagnostics for anomalous readings
+      // These use their own AbortController and won't be cancelled by the next poll
       const anomalies = [...criticals, ...warnings].filter(
         (r) => r.vibration > VIBRATION_ALERT_THRESHOLD
       )
       anomalies.forEach((r) => {
         // Non-blocking: don't await — let diagnostics arrive asynchronously
-        void requestAiDiagnostic(r, signal)
+        void requestAiDiagnostic(r)
       })
     } catch (err) {
       if ((err as Error).name === 'AbortError') return
@@ -180,11 +222,21 @@ export function useTelemetry(): TelemetryState {
 
   // ── Effect: Start polling ─────────────────────────────────────────────────
   useEffect(() => {
+    mountedRef.current = true
+    // Create a fresh AbortController for AI requests on each mount.
+    // Without this, after HMR or React strict-mode remounts, the previous
+    // controller would already be aborted, causing all AI fetches to fail immediately.
+    aiAbortRef.current = new AbortController()
+
+    console.log('[useTelemetry] Mounted — starting poll cycle')
     void poll()                                     // immediate first fetch
     const timer = setInterval(poll, POLL_INTERVAL_MS)
     return () => {
+      console.log('[useTelemetry] Unmounting — aborting AI requests')
+      mountedRef.current = false
       clearInterval(timer)
-      abortRef.current?.abort()
+      pollAbortRef.current?.abort()    // cancel pending poll fetches
+      aiAbortRef.current.abort()       // cancel in-flight AI requests on unmount
     }
   }, [poll])
 
@@ -204,5 +256,6 @@ export function useTelemetry(): TelemetryState {
     isLoading,
     errorMessage,
     stats,
+    pendingDiagnostics,
   }
 }

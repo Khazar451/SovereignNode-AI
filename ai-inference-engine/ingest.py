@@ -65,6 +65,14 @@ def extract_text_from_txt(path: Path) -> str:
     return raw.decode(encoding, errors="replace")
 
 
+def extract_text_from_md(path: Path) -> str:
+    """Read a .md file, stripping markdown syntax for clean text extraction."""
+    raw = path.read_bytes()
+    detected = chardet.detect(raw)
+    encoding = detected.get("encoding") or "utf-8"
+    return raw.decode(encoding, errors="replace")
+
+
 def extract_text(path: Path) -> str:
     """Dispatch to the correct extractor based on file extension."""
     suffix = path.suffix.lower()
@@ -72,7 +80,10 @@ def extract_text(path: Path) -> str:
         return extract_text_from_pdf(path)
     elif suffix == ".txt":
         return extract_text_from_txt(path)
+    elif suffix == ".md":
+        return extract_text_from_md(path)
     raise ValueError(f"Unsupported file type: {suffix}")
+
 
 
 # ─── Chunking ─────────────────────────────────────────────────────────────

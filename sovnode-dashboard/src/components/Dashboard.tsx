@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useTelemetry } from '../hooks/useTelemetry'
 import { SensorCard } from './SensorCard'
 import { AiDiagnosticsPanel } from './AiDiagnosticsPanel'
+import { AiChatPanel } from './AiChatPanel'
 import type { ConnectionStatus } from '../types'
 
 // ─── Header ───────────────────────────────────────────────────────────────────
@@ -70,7 +71,7 @@ function Header({ status, lastUpdated }: {
 
           {/* System label */}
           <span className="hidden md:block mono text-[11px] text-slate-500">
-            Industrial IoT · Predictive Maintenance · Air-gapped
+            Industrial IoT · Predictive Maintenance · Air-gapped · Qwen 2.5-3B
           </span>
         </div>
 
@@ -162,6 +163,52 @@ function SkeletonCard() {
   )
 }
 
+// ─── Right Panel Tab Switcher ─────────────────────────────────────────────────
+
+type RightPanelTab = 'diagnostics' | 'chat'
+
+function RightPanelTabs({
+  activeTab,
+  onTabChange,
+  pendingCount,
+}: {
+  activeTab: RightPanelTab
+  onTabChange: (t: RightPanelTab) => void
+  pendingCount: number
+}) {
+  const tabs: { id: RightPanelTab; label: string; icon: string }[] = [
+    { id: 'diagnostics', label: 'AI Diagnostics', icon: '⬢' },
+    { id: 'chat',        label: 'AI Chat',        icon: '💬' },
+  ]
+
+  return (
+    <div className="flex gap-1 p-1 rounded-xl bg-slate-900 border border-slate-800 flex-shrink-0 mb-4">
+      {tabs.map((tab) => (
+        <button
+          key={tab.id}
+          id={`tab-${tab.id}`}
+          onClick={() => onTabChange(tab.id)}
+          className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg
+                      text-xs font-medium transition-all duration-200 ${
+            activeTab === tab.id
+              ? 'bg-slate-800 text-slate-100 shadow-sm'
+              : 'text-slate-500 hover:text-slate-300'
+          }`}
+        >
+          <span>{tab.icon}</span>
+          <span>{tab.label}</span>
+          {tab.id === 'diagnostics' && pendingCount > 0 && (
+            <span className="ml-1 w-4 h-4 rounded-full bg-violet-500 text-[9px] text-white
+                             flex items-center justify-center font-bold">
+              {pendingCount}
+            </span>
+          )}
+        </button>
+      ))}
+    </div>
+  )
+}
+
 // ─── Main Dashboard Component ─────────────────────────────────────────────────
 
 export function Dashboard() {
@@ -173,7 +220,10 @@ export function Dashboard() {
     isLoading,
     errorMessage,
     stats,
+    pendingDiagnostics,
   } = useTelemetry()
+
+  const [activeTab, setActiveTab] = useState<RightPanelTab>('chat')
 
   // Track which readings are "new" to trigger the highlight animation
   const [newIds, setNewIds] = useState<Set<string>>(new Set())
@@ -191,6 +241,13 @@ export function Dashboard() {
       return () => clearTimeout(t)
     }
   }, [readings, prevIdsRef])
+
+  // Switch to diagnostics tab when a new insight arrives
+  useEffect(() => {
+    if (diagnostics.length > 0 && activeTab !== 'diagnostics') {
+      // Don't auto-switch — let user stay in chat. Just add badge.
+    }
+  }, [diagnostics.length]) // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <div className="min-h-screen bg-[#030712] bg-grid flex flex-col">
@@ -262,7 +319,7 @@ export function Dashboard() {
             </div>
           </section>
 
-          {/* ── Right Column: AI Diagnostics ──────────────────────────── */}
+          {/* ── Right Column: AI Panel (Diagnostics + Chat) ───────────── */}
           <aside
             className="flex flex-col min-h-0 rounded-2xl border border-slate-800
                        bg-slate-950/60 backdrop-blur-sm p-5 xl:sticky xl:top-[61px]
@@ -270,8 +327,26 @@ export function Dashboard() {
           >
             {/* Top glow accent */}
             <div className="absolute top-0 left-1/2 -translate-x-1/2 w-32 h-px
-                            bg-gradient-to-r from-transparent via-violet-500/60 to-transparent" />
-            <AiDiagnosticsPanel diagnostics={diagnostics} />
+                            bg-gradient-to-r from-transparent via-cyan-500/60 to-transparent" />
+
+            {/* Tab switcher */}
+            <RightPanelTabs
+              activeTab={activeTab}
+              onTabChange={setActiveTab}
+              pendingCount={pendingDiagnostics}
+            />
+
+            {/* Panel content */}
+            <div className="flex-1 min-h-0 overflow-hidden flex flex-col">
+              {activeTab === 'diagnostics' ? (
+                <AiDiagnosticsPanel
+                  diagnostics={diagnostics}
+                  pendingCount={pendingDiagnostics}
+                />
+              ) : (
+                <AiChatPanel />
+              )}
+            </div>
           </aside>
         </div>
       </main>
@@ -280,10 +355,10 @@ export function Dashboard() {
       <footer className="flex-shrink-0 border-t border-slate-900 px-6 py-2.5
                          flex items-center justify-between">
         <span className="mono text-[10px] text-slate-700">
-          SovereignNode AI v1.0.0 · Air-gapped · Zero data egress
+          SovereignNode AI v2.0.0 · Qwen 2.5-3B via Ollama · Air-gapped
         </span>
         <span className="mono text-[10px] text-slate-700">
-          Java :18080 · Python :8000 · MongoDB :27017 · RabbitMQ :5672
+          Java :18080 · Python :8000 · Ollama :11434 · MongoDB :27017
         </span>
       </footer>
     </div>

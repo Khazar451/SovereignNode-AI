@@ -108,23 +108,73 @@ function DiagnosticCard({ diagnostic }: { diagnostic: AiDiagnostic }) {
   )
 }
 
+// ─── Pending Inference Indicator ──────────────────────────────────────────────
+
+function PendingInferenceCard({ count }: { count: number }) {
+  return (
+    <div className="border border-violet-500/30 rounded-xl p-4 bg-violet-500/5 animate-fade-in
+                    space-y-3">
+      <div className="flex items-center gap-3">
+        {/* Spinning indicator */}
+        <div className="relative w-8 h-8 flex-shrink-0">
+          <div className="absolute inset-0 rounded-lg border-2 border-violet-500/20" />
+          <div className="absolute inset-0 rounded-lg border-2 border-transparent border-t-violet-500
+                          animate-spin" />
+          <div className="absolute inset-0 flex items-center justify-center">
+            <span className="text-violet-400 text-xs">⬢</span>
+          </div>
+        </div>
+        <div className="flex flex-col gap-0.5 min-w-0">
+          <span className="text-sm font-semibold text-violet-300">
+            Generating Diagnostics…
+          </span>
+          <span className="mono text-[10px] text-violet-400/70">
+            {count} inference {count === 1 ? 'request' : 'requests'} in progress · LLM processing on CPU
+          </span>
+        </div>
+      </div>
+
+      {/* Progress dots animation */}
+      <div className="flex items-center gap-1.5 pl-11">
+        <div className="w-1.5 h-1.5 rounded-full bg-violet-500/60 animate-bounce"
+             style={{ animationDelay: '0ms' }} />
+        <div className="w-1.5 h-1.5 rounded-full bg-violet-500/60 animate-bounce"
+             style={{ animationDelay: '200ms' }} />
+        <div className="w-1.5 h-1.5 rounded-full bg-violet-500/60 animate-bounce"
+             style={{ animationDelay: '400ms' }} />
+        <span className="mono text-[10px] text-slate-600 ml-1">
+          ~40-80s per insight on CPU
+        </span>
+      </div>
+    </div>
+  )
+}
+
 // ─── AiDiagnosticsPanel ───────────────────────────────────────────────────────
 
 interface AiDiagnosticsPanelProps {
   diagnostics: AiDiagnostic[]
+  pendingCount: number
 }
 
-export function AiDiagnosticsPanel({ diagnostics }: AiDiagnosticsPanelProps) {
+export function AiDiagnosticsPanel({ diagnostics, pendingCount }: AiDiagnosticsPanelProps) {
   return (
     <div className="flex flex-col h-full">
       {/* Panel header */}
       <div className="flex items-center justify-between mb-4 flex-shrink-0">
         <div className="flex items-center gap-3">
           <div className="relative">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-600 to-cyan-600
-                            flex items-center justify-center text-sm shadow-lg shadow-cyan-500/20">
+            <div className={`w-8 h-8 rounded-lg bg-gradient-to-br from-violet-600 to-cyan-600
+                            flex items-center justify-center text-sm shadow-lg shadow-cyan-500/20
+                            ${pendingCount > 0 ? 'animate-pulse' : ''}`}>
               ⬢
             </div>
+            {pendingCount > 0 && (
+              <div className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-violet-500
+                              flex items-center justify-center">
+                <span className="text-[8px] text-white font-bold mono">{pendingCount}</span>
+              </div>
+            )}
           </div>
           <div>
             <h2 className="text-sm font-semibold text-slate-100">AI Diagnostics</h2>
@@ -146,7 +196,10 @@ export function AiDiagnosticsPanel({ diagnostics }: AiDiagnosticsPanelProps) {
 
       {/* Content */}
       <div className="flex-1 overflow-y-auto space-y-3 pr-0.5">
-        {diagnostics.length === 0 ? (
+        {/* Show pending inference indicator at the top */}
+        {pendingCount > 0 && <PendingInferenceCard count={pendingCount} />}
+
+        {diagnostics.length === 0 && pendingCount === 0 ? (
           <EmptyDiagnosticsState />
         ) : (
           diagnostics.map((d) => <DiagnosticCard key={d.id} diagnostic={d} />)

@@ -1,27 +1,22 @@
-# SovereignNode AI — Offline RAG Inference Engine
+# SovereignNode AI — Inference Engine Requirements (Ollama Edition)
 # Install: pip install -r requirements.txt
 #
-# CUDA setup (run first):
-#   pip install torch==2.3.0 --index-url https://download.pytorch.org/whl/cu121
-# Flash Attention 2 (optional, Ampere+ GPU only):
-#   pip install flash-attn --no-build-isolation
+# This version uses Ollama for LLM inference (Qwen 2.5-3B).
+# Ollama must be installed separately: https://ollama.com/download
+# Pull the model: ollama pull qwen2.5:3b
 
 # ── Web server ────────────────────────────────────────────────────────────────
 fastapi==0.111.0
 uvicorn[standard]==0.30.0
 httpx==0.27.0
+requests>=2.32.3
 
-# ── ML / AI stack ─────────────────────────────────────────────────────────────
-# Pinned to last known-good set: transformers 5.x has a NameError bug in
-# integrations/accelerate.py (nn used before import). 4.44.2 is stable.
-transformers==4.44.2
-accelerate==0.33.0
-bitsandbytes==0.43.3
+# ── Embedding model (CPU-optimised, no GPU required) ─────────────────────────
+sentence-transformers==3.0.1
 torch==2.3.0
 sentencepiece==0.2.0
 protobuf==4.25.0
-sentence-transformers==3.0.1
-huggingface-hub==0.23.0
+huggingface-hub==0.23.2
 
 # ── Vector store & document processing ───────────────────────────────────────
 chromadb==0.5.0

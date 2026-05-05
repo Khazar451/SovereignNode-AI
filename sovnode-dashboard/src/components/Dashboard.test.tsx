@@ -39,6 +39,7 @@ describe('Dashboard Component - AI Diagnostics Integration', () => {
       isLoading: false,
       errorMessage: null,
       stats: mockStats,
+      pendingDiagnostics: 0,
     })
 
     // 4. Render the dashboard
@@ -69,6 +70,7 @@ describe('Dashboard Component - AI Diagnostics Integration', () => {
       isLoading: false,
       errorMessage: null,
       stats: { totalReadings: 0, criticalCount: 0, warningCount: 0, nominalCount: 0 },
+      pendingDiagnostics: 0,
     })
 
     render(<Dashboard />)

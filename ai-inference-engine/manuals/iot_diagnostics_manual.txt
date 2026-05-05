@@ -1,0 +1,225 @@
+INDUSTRIAL IoT SENSOR DIAGNOSTICS MANUAL
+SovereignNode AI Predictive Maintenance Reference
+Version 2.0 | 2026
+
+==========================================================================
+SECTION 1 — HIGH VIBRATION DIAGNOSTICS
+==========================================================================
+
+1.1 Vibration Alarm Thresholds
+--------------------------------
+- NOMINAL: Vibration below 4.5 mm/s RMS — No action required.
+- WARNING: Vibration 4.5–7.1 mm/s RMS — Schedule inspection within 48 hours.
+- CRITICAL: Vibration above 7.1 mm/s RMS — Immediate shutdown and inspection required.
+- EMERGENCY: Vibration above 14.0 mm/s RMS — Immediate emergency stop. Do not restart.
+
+Per ISO 10816-3 Class III standard for industrial rotating machinery:
+Class III machines (>15 kW, rigid mounting): alarm at 7.1 mm/s, trip at 11.2 mm/s.
+
+1.2 Root Causes of High Vibration (>7.1 mm/s RMS)
+---------------------------------------------------
+When a sensor reports vibration significantly above the 7.1 mm/s alarm threshold,
+the following root causes should be investigated in priority order:
+
+a) BEARING FAILURE (Most Common — 40% of cases)
+   - Symptoms: High-frequency vibration component, rising temperature, metallic noise.
+   - Action: Check bearing radial play (replace if clearance >0.05 mm).
+   - Action: Inspect lubricant — discoloration or metal particles indicate failure.
+   - Action: Replace bearing immediately if vibration >9 mm/s with rising temperature.
+   - Part numbers: FAG 6316-2RSR-C3 (NDE), FAG 6220-2RSR (DE).
+
+b) SHAFT MISALIGNMENT (25% of cases)
+   - Symptoms: High vibration at 1x and 2x running speed.
+   - Action: Perform laser alignment check. Tolerance: 0.05 mm/m.
+   - Action: Realign coupling before returning to service.
+
+c) IMPELLER IMBALANCE (15% of cases)
+   - Symptoms: Vibration at exactly 1x running speed (RPM/60).
+   - Action: Remove and rebalance impeller to ISO 1940 Grade G2.5.
+   - Action: Inspect impeller for erosion (replace if blade thickness <3 mm).
+
+d) CAVITATION (10% of cases)
+   - Symptoms: Broadband high-frequency vibration, crackling noise.
+   - Action: Check NPSH available vs required. Verify suction pressure.
+   - Action: Check for air entrainment in suction line.
+
+e) FOUNDATION LOOSENESS (5% of cases)
+   - Symptoms: Sub-synchronous vibration component.
+   - Action: Re-grout baseplate. Retorque foundation bolts to specification.
+   - Action: Inspect for cracked concrete pad.
+
+f) RESONANCE
+   - Symptoms: Vibration increases at specific speed.
+   - Action: Adjust operating speed to avoid resonance zone.
+   - Action: Add vibration damping or stiffening to structure.
+
+1.3 Immediate Corrective Actions for CRITICAL Vibration Status
+---------------------------------------------------------------
+When sensor status is CRITICAL (vibration >7.1 mm/s):
+
+STEP 1: Do NOT ignore the alarm. Continued operation risks catastrophic failure.
+STEP 2: Notify the shift supervisor and maintenance team immediately.
+STEP 3: If vibration >11.2 mm/s, initiate controlled shutdown via DCS or press E-STOP.
+STEP 4: Perform visual inspection for loose components, leaks, or unusual noise.
+STEP 5: Conduct bearing temperature check (IR gun or thermocouple).
+STEP 6: Review vibration trend data for the preceding 24 hours.
+STEP 7: Issue work order for bearing inspection and alignment check.
+STEP 8: Do not restart until root cause identified and corrected.
+
+==========================================================================
+SECTION 2 — HIGH TEMPERATURE DIAGNOSTICS
+==========================================================================
+
+2.1 Temperature Alarm Thresholds
+---------------------------------
+- NOMINAL: Bearing temperature below 60°C — Normal operation.
+- WARNING: Bearing temperature 60–80°C — Increase monitoring frequency.
+- CRITICAL: Bearing temperature above 80°C — Investigate immediately.
+- TRIP: Bearing temperature above 95°C — Automatic shutdown (safety system).
+
+2.2 Root Causes of High Temperature
+-------------------------------------
+a) INSUFFICIENT LUBRICATION
+   - Check lubricant level (sight glass: between MIN and MAX marks).
+   - Re-grease with SKF LGMT 3, 5 ml per bearing housing via grease nipple.
+   - If temperature still rising after re-lubrication, bearing may be damaged.
+
+b) CONTAMINATED LUBRICANT
+   - Discolored grease (dark brown or black) indicates thermal degradation.
+   - Metallic particles in grease confirm bearing wear.
+   - Action: Flush bearing housing and repack with fresh grease.
+
+c) OVERLOADING
+   - Verify motor current draw against nameplate FLA (128 A at 415V/50Hz).
+   - If current exceeds FLA by >10%, investigate process conditions.
+
+d) COOLING FAILURE
+   - Check cooling water flow to heat exchanger (if applicable).
+   - Verify fan rotation (motor-mounted cooling fan must be intact).
+   - Inspect heat exchanger for fouling or blockage.
+
+2.3 Combined High Vibration + High Temperature
+----------------------------------------------
+When both vibration AND temperature exceed alarm thresholds simultaneously:
+- This indicates BEARING FAILURE with 90% probability.
+- Immediate shutdown is mandatory.
+- Replace bearing before returning equipment to service.
+- Inspect adjacent components (shaft, housing, seal) for secondary damage.
+
+==========================================================================
+SECTION 3 — SENSOR STATUS INTERPRETATION
+==========================================================================
+
+3.1 CRITICAL Status Definition
+--------------------------------
+A sensor reading is classified as CRITICAL when:
+- Vibration exceeds 7.1 mm/s RMS (ISO 10816-3 Class III alarm threshold), OR
+- Temperature exceeds 80°C for bearings, OR
+- Both conditions occur simultaneously (emergency condition).
+
+CRITICAL status requires:
+1. Immediate notification to shift supervisor.
+2. Maintenance team dispatch within 30 minutes.
+3. Equipment inspection within 2 hours.
+4. Root cause analysis and corrective action before restart.
+
+3.2 WARNING Status Definition
+-------------------------------
+A sensor reading is classified as WARNING when:
+- Vibration is between 4.5 and 7.1 mm/s RMS, OR
+- Temperature is between 60°C and 80°C.
+
+WARNING status requires:
+1. Increased monitoring frequency (every 15 minutes).
+2. Maintenance inspection scheduled within 48 hours.
+3. Lubricant check within 4 hours.
+
+3.3 NOMINAL Status
+-------------------
+Vibration below 4.5 mm/s RMS and temperature below 60°C.
+Normal operation. Maintain standard inspection schedule.
+
+==========================================================================
+SECTION 4 — SENSOR-SPECIFIC MAINTENANCE INTERVALS
+==========================================================================
+
+4.1 Pump Sensors (PUMP-001, PUMP-002, etc.)
+---------------------------------------------
+- Daily: Visual inspection, vibration check, seal condition.
+- Weekly: Bearing temperature trending, lubrication check.
+- Monthly: Full vibration analysis (ISO 10816-3), alignment check.
+- Annually: Full overhaul, bearing replacement, seal cartridge replacement.
+
+4.2 Compressor Sensors (COMP-003, COMP-004, etc.)
+---------------------------------------------------
+- Daily: Suction/discharge pressure check, temperature monitoring.
+- Weekly: Valve inspection, oil level check, filter differential pressure.
+- Monthly: Vibration analysis, coupling inspection.
+- Quarterly: Valve overhaul, oil change.
+
+4.3 Gearbox Sensors (GEARBOX-001, etc.)
+-----------------------------------------
+- Daily: Oil level check, temperature monitoring, abnormal noise.
+- Weekly: Oil condition (color, smell), breather inspection.
+- Monthly: Oil sample analysis (send to lab for particle count).
+- Annually: Full gearbox inspection, oil change, bearing replacement.
+
+4.4 Bearing Sensors (BEARING-007, etc.)
+-----------------------------------------
+- Real-time: Continuous vibration and temperature monitoring via IoT sensor.
+- Daily: Verify sensor reading is within nominal range.
+- Weekly: Manual vibration check with handheld analyzer.
+- Monthly: Grease replenishment and bearing inspection.
+
+==========================================================================
+SECTION 5 — PREVENTIVE MAINTENANCE BEST PRACTICES
+==========================================================================
+
+5.1 Lubrication Management
+----------------------------
+- Use only approved lubricants: SKF LGMT 3 grease for bearings.
+- Over-greasing is as harmful as under-greasing — use measured quantities (5 ml per housing).
+- Grease every 2,000 operating hours or monthly (whichever comes first).
+- Store lubricants in sealed containers away from heat and moisture.
+
+5.2 Alignment Practices
+------------------------
+- Perform laser alignment after every bearing replacement.
+- Acceptable tolerance: 0.05 mm/m angular, 0.05 mm offset.
+- Re-check alignment after first 24 hours of operation after maintenance.
+- Thermal growth compensation: measure alignment at operating temperature.
+
+5.3 Vibration Trend Analysis
+------------------------------
+- Establish baseline vibration values for each equipment at commissioning.
+- Alert on any 20% increase over the rolling 7-day average.
+- Trending toward alarm threshold (7.1 mm/s) triggers pre-emptive maintenance.
+- Document all vibration readings in the equipment history log.
+
+==========================================================================
+SECTION 6 — EMERGENCY PROCEDURES
+==========================================================================
+
+6.1 Emergency Shutdown Procedure
+----------------------------------
+1. Press red E-STOP button on local MCC panel, OR
+2. Use DCS tag PMP-7000-ESD for remote shutdown, OR
+3. Activate emergency stop via SovereignNode AI dashboard alert.
+
+Post-shutdown checklist:
+- Isolate power (LOTO — Lock Out Tag Out procedure).
+- Allow equipment to coast to stop (do NOT apply brakes).
+- Record time, sensor readings, and observations in maintenance log.
+- Notify maintenance and engineering teams.
+
+6.2 When to Call for Immediate Assistance
+------------------------------------------
+- Vibration exceeds 14.0 mm/s RMS at any sensor.
+- Visible sparks, smoke, or fire near any rotating equipment.
+- Sudden loud noise (bang) from pump or motor.
+- Bearing temperature exceeds 95°C and does not respond to cooling.
+- Multiple sensors showing CRITICAL status simultaneously.
+
+==========================================================================
+END OF INDUSTRIAL IoT SENSOR DIAGNOSTICS MANUAL
+==========================================================================
