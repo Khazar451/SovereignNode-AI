@@ -82,7 +82,7 @@ Once the Docker Compose stack is running, you can interact with the platform:
    ```
 
 3. **Monitor the AI**: Watch the inference engine logs in real-time as it detects anomalies and generates insights:
-   ```bash
+   ```bash 
    docker compose logs -f inference-engine
    ```
 
