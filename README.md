@@ -11,7 +11,6 @@
 **SovereignNode AI** is a production-ready, air-gapped Industrial IoT predictive maintenance edge node. It is designed to operate entirely on constrained local hardware, ingesting high-frequency factory telemetry, detecting critical anomalies, and generating Retrieval-Augmented Generation (RAG) diagnostic reports—**all without ever sending sensitive operational data to the cloud.**
 
 ---
-
 ## The "Why": Architecture & Tech Stack
 
 Industrial environments require absolute data sovereignty, high reliability, and rapid insight generation on highly constrained edge servers. 
