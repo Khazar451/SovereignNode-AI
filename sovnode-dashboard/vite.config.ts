@@ -14,7 +14,7 @@ export default defineConfig({
       },
       // Proxy Python inference engine (Ollama / Qwen 2.5-3B)
       '/inference': {
-        target: 'http://localhost:8001',
+        target: 'http://localhost:8000',
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/inference/, ''),
       },
